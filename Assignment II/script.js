@@ -1,111 +1,325 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 
-// Scene, Camera, Renderer
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+function init() {
+  // --- Scene Setup ---
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xa0a0a0);
 
-const roomSize = 20;
-const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xd3d3d3, side: THREE.BackSide });
-const roomGeometry = new THREE.BoxGeometry(roomSize, roomSize, roomSize);
-const room = new THREE.Mesh(roomGeometry, wallMaterial);
-scene.add(room);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 2, 2);
 
-// Adjust camera position to be inside the cube
-camera.position.set(0, roomSize / 4, roomSize / 3);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
 
-// Window texture
-const textureLoader = new THREE.TextureLoader();
-const windowTexture = textureLoader.load('./public/window/win-text.jpg');
+  document.body.appendChild(renderer.domElement);
 
-const windowMaterial = new THREE.MeshStandardMaterial({
-    map: windowTexture,
-    side: THREE.BackSide
-});
+  // --- Texture Loader and Textures ---
+  const textureLoader = new THREE.TextureLoader();
+  const floorTexture = textureLoader.load('textures/Cracks_152.jpg');
+  const wallTexture = textureLoader.load('textures/Cracks_138.jpg');
+  const ceilingTexture = textureLoader.load('textures/Cracks-0748.jpg');
 
-// Replace one wall with windows
-const walls = room.material;
-if (Array.isArray(walls)) {
-    walls[2] = windowMaterial; // Assuming the third face is the window wall
-} else {
-    room.material = [
-        wallMaterial,
-        wallMaterial,
-        windowMaterial,
-        wallMaterial,
-        wallMaterial,
-        wallMaterial
-    ];
-}
+  // Configure texture wrapping and repeat values
+  [floorTexture, wallTexture, ceilingTexture].forEach(tex => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  });
+  floorTexture.repeat.set(20, 20);
+  wallTexture.repeat.set(7, 1);
+  ceilingTexture.repeat.set(10, 10);
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
+  // --- Classroom Room ---
+  const roomMaterials = [
+    new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.BackSide }),    // Left wall
+    new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.BackSide }),    // Right wall
+    new THREE.MeshStandardMaterial({ map: ceilingTexture, side: THREE.BackSide }),   // Ceiling
+    new THREE.MeshStandardMaterial({ map: floorTexture, side: THREE.BackSide }),     // Floor
+    new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.BackSide }),      // Back wall
+    new THREE.MeshStandardMaterial({ map: wallTexture, side: THREE.BackSide })       // Front wall
+  ];
+  const roomGeometry = new THREE.BoxGeometry(9, 4, 15);
+  const classroom = new THREE.Mesh(roomGeometry, roomMaterials);
+  classroom.receiveShadow = true;
+  scene.add(classroom);
 
-const overheadLight = new THREE.PointLight(0xffffff, 0.8);
-overheadLight.position.set(0, roomSize / 2 - 1, 0);
-scene.add(overheadLight);
+  // --- Helper Function to Load GLTF Models ---
+  /**
+   * Loads a GLTF model and applies configuration options.
+   * @param {string} url 
+   * @param {Object} options 
+   * @param {THREE.Vector3} [options.scale]
+   * @param {THREE.Vector3} [options.position] 
+   * @param {THREE.Vector3} [options.rotation] 
+   * @param {function} [options.onLoad]
+   */
+  function loadModel(url, { 
+    scale = new THREE.Vector3(1, 1, 1), 
+    position = new THREE.Vector3(), 
+    rotation = new THREE.Vector3(), 
+    onLoad = () => {} 
+  } = {}) {
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.copy(scale);
+        model.position.copy(position);
+        model.rotation.set(rotation.x, rotation.y, rotation.z);
+        model.traverse(child => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        scene.add(model);
+        onLoad(model);
+      },
+      undefined,
+      (error) => {
+        console.error(`Error loading model from ${url}:`, error);
+      }
+    );
+  }
 
-// Function to load OBJ models
-function loadOBJModel(path, position, rotation, scale) {
-    return new Promise((resolve, reject) => {
-        const loader = new OBJLoader();
-        loader.load(
-            path,
-            function (object) {
-                object.position.set(position.x, position.y, position.z);
-                object.rotation.set(rotation.x, rotation.y, rotation.z);
-                object.scale.set(scale, scale, scale);
-                scene.add(object);
-                resolve(object);
-            },
-            function (xhr) {
-                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            function (error) {
-                console.error('An error happened', error);
-                reject(error);
-            }
-        );
+  // --- Function to Spawn Furniture ---
+  function spawnFurniture(offset) {
+    loadModel('models/school_desk.glb', {
+      scale: new THREE.Vector3(4, 3, 4),
+      position: new THREE.Vector3(0, -2, -0.6).add(offset)
     });
+    // Load two chairs with different positions relative to the offset
+    loadModel('models/school_chair.glb', {
+      scale: new THREE.Vector3(3, 3, 3),
+      position: new THREE.Vector3(-1, -2, -0.5).add(offset),
+      rotation: new THREE.Vector3(0, -Math.PI, 0)
+    });
+    loadModel('models/school_chair.glb', {
+      scale: new THREE.Vector3(3, 3, 3),
+      position: new THREE.Vector3(-1.8, -2, -0.5).add(offset),
+      rotation: new THREE.Vector3(0, -Math.PI, 0)
+    });
+  }
+
+  // --- Spawn Multiple Furniture Sets ---
+  const furnitureOffsets = [
+    new THREE.Vector3(2, 0, 2),
+    new THREE.Vector3(-2, 0, 2),
+    new THREE.Vector3(2, 0, 0),
+    new THREE.Vector3(-2, 0, 0),
+    new THREE.Vector3(2, 0, -2),
+    new THREE.Vector3(-2, 0, -2),
+    new THREE.Vector3(2, 0, -4),
+    new THREE.Vector3(-2, 0, -4)
+  ];
+  furnitureOffsets.forEach(offset => spawnFurniture(offset));
+
+  // --- Additional Desk and Chair ---
+  loadModel('models/school_desk.glb', {
+    scale: new THREE.Vector3(4, 3, 4),
+    position: new THREE.Vector3(-2, -2, 4),
+    rotation: new THREE.Vector3(0, -Math.PI, 0)
+  });
+  loadModel('models/school_chair.glb', {
+    scale: new THREE.Vector3(3, 3, 3),
+    position: new THREE.Vector3(-0.5, -2, 4.2),
+    rotation: new THREE.Vector3(0, 20, 0)
+  });
+
+  // --- Door Model ---
+  loadModel('models/Barricade.glb', {
+    scale: new THREE.Vector3(1.5, 1.5, 1.5),
+    position: new THREE.Vector3(-4.2, -1, 5)
+  });
+
+
+  loadModel('models/Blackboard.glb', {
+    scale: new THREE.Vector3(0.3, 0.3, 0.3),
+    position: new THREE.Vector3(0, -0.5, 7.3),
+    rotation: new THREE.Vector3(0, +Math.PI, 0)
+  });
+
+  // --- Function to Add a Window Light ---
+  /**
+   * Adds a spotlight simulating sunlight coming through a window.
+   * @param {THREE.Vector3} lightPos
+   * @param {THREE.Vector3} targetPos
+   */
+  function addWindowLight(lightPos, targetPos) {
+    const spotLight = new THREE.SpotLight(0xfdfbd3, 3, 50, Math.PI / 1, 0.5, 2);
+    spotLight.position.copy(lightPos);
+    spotLight.target.position.copy(targetPos);
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+    scene.add(spotLight);
+    scene.add(spotLight.target);
+  }
+
+  // --- Function to Add a Skybox Cube Behind a Window ---
+  function addSkyboxCube(position) {
+    const skyboxTexture = textureLoader.load('textures/storm.jpg');
+    const skyboxMaterial = new THREE.MeshBasicMaterial({ map: skyboxTexture, side: THREE.BackSide });
+    const skyboxGeometry = new THREE.BoxGeometry(0.01, 1.2, 1.9);
+    const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+    skybox.position.copy(position);
+    scene.add(skybox);
+  }
+
+  // --- Windows Models with Skybox Cubes and Window Lights ---
+  const windowPositions = [
+    { modelPos: new THREE.Vector3(4.4, -1, 5), lightPos: new THREE.Vector3(4.4, 0, 5), targetPos: new THREE.Vector3(3, -2, 5) },
+    { modelPos: new THREE.Vector3(4.4, -1, 2), lightPos: new THREE.Vector3(4.4, 0, 2), targetPos: new THREE.Vector3(3, -2, 2) },
+    { modelPos: new THREE.Vector3(4.4, -1, -1), lightPos: new THREE.Vector3(4.4, 0, -1), targetPos: new THREE.Vector3(3, -2, -1) },
+    { modelPos: new THREE.Vector3(4.4, -1, -4), lightPos: new THREE.Vector3(4.4, 0, -4), targetPos: new THREE.Vector3(3, -2, -4) },
+  ];
+
+  windowPositions.forEach(win => {
+    loadModel('models/window.glb', {
+      scale: new THREE.Vector3(0.07, 0.07, 0.07),
+      rotation: new THREE.Vector3(0, -Math.PI / 2, 0),
+      position: win.modelPos,
+      onLoad: () => {
+        const skyboxPos = win.modelPos.clone().setX(win.modelPos.x + 1).setY(win.modelPos.y + 1.5);
+        addWindowLight(win.lightPos, win.targetPos);
+      }
+    });
+  });
+
+  // --- Bookcase Model ---
+  loadModel('models/bookcase.glb', {
+    scale: new THREE.Vector3(5, 3.5, 3.5),
+    position: new THREE.Vector3(4, -2, 6.5)
+  });
+
+  // --- Function to Add a Flickering Candle Light ---
+function addCandleLight(position) {
+  const candleLight = new THREE.PointLight(0xffa500, 2, 5); 
+  candleLight.position.copy(position);
+  candleLight.castShadow = true;
+  candleLight.shadow.mapSize.width = 512;
+  candleLight.shadow.mapSize.height = 512;
+
+  scene.add(candleLight);
+
+  // Create a flickering effect
+  function flickerLight() {
+    candleLight.intensity = 1.5 + Math.random() * 0.5;
+    candleLight.position.y = position.y + Math.random() * 0.05; 
+    requestAnimationFrame(flickerLight);
+  }
+  flickerLight();
 }
 
-// Load chairs and desks
-const modelPromises = [];
-
-for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 2; col++) {
-        const x = (col - 0.5) * 6;
-        const z = (row - 0.5) * 6;
-
-        // Load desk
-        modelPromises.push(loadOBJModel('/public/desk/desk.obj', { x, y: 0, z }, { x: 0, y: 0, z: 0 }, 1));
-
-        // Load chairs
-        modelPromises.push(loadOBJModel('/public/chair/chair-obj.obj', { x: x - 0.75, y: 0, z: z + 0.75 }, { x: 0, y: Math.PI, z: 0 }, 1));
-        modelPromises.push(loadOBJModel('/public/chair/chair-obj.obj', { x: x + 0.75, y: 0, z: z + 0.75 }, { x: 0, y: Math.PI, z: 0 }, 1));
-    }
-}
-
-Promise.all(modelPromises).then(() => {
-    console.log('All models loaded successfully');
-}).catch((error) => {
-    console.error('Error loading models:', error);
+// --- Load Candle Model ---
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(-4, -0.8, -4), 
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
 });
 
-// OrbitControls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(-3, -0.8, -2),
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
 
-// Animation Loop
-function animate() {
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(-4, -0.8, -0.5),
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(-3.5, -0.8, 2), 
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+
+
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(0.9, -0.8, -4),
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(1.5, -0.8, -2), 
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(1, -0.8, -0.5),
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+loadModel('models/Candle.glb', {
+  scale: new THREE.Vector3(0.5, 0.5, 0.5),
+  position: new THREE.Vector3(1, -0.8, 2),
+  onLoad: (candle) => {
+    addCandleLight(new THREE.Vector3(candle.position.x, candle.position.y + 0.3, candle.position.z));
+  }
+});
+
+
+
+  // --- Sky Setup ---
+  const sky = new Sky();
+  sky.scale.setScalar(450000);
+  scene.add(sky);
+  
+  const skyUniforms = sky.material.uniforms;
+  const sun = new THREE.Vector3();
+  const phi = THREE.MathUtils.degToRad(90);
+  const theta = THREE.MathUtils.degToRad(180);
+  sun.setFromSphericalCoords(1, phi, theta);
+  skyUniforms['sunPosition'].value.copy(sun);
+  skyUniforms['turbidity'].value = 10;
+  skyUniforms['rayleigh'].value = 2;
+  skyUniforms['mieCoefficient'].value = 0.005;
+  skyUniforms['mieDirectionalG'].value = 0.8;
+  
+  // --- Orbit Controls ---
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+
+  // --- Animation Loop ---
+  function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
+  }
+  animate();
+
+  // --- Responsive Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 }
-animate();
+
+init();

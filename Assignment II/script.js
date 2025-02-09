@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 function init() {
   // Set up the scene
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xa0a0a0); // Set background color
+  scene.background = new THREE.Color(0x383635); // Set background color
 
   // Set up the camera
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);

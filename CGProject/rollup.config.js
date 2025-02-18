@@ -1,24 +1,19 @@
-import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
-import path from 'path';
-
 export default {
-  input: 'script.js', // Replace with your actual entry file
-  output: {
-    dir: 'dist',
-    format: 'esm',
-    chunkFileNames: '[name]-[hash].js',
-    entryFileNames: '[name].js',
-    manualChunks(id) {
-      if (id.includes('node_modules')) {
-        return 'vendor';
-      }
+    input: 'script.js',
+    output: {
+      dir: 'dist',
+      format: 'esm',
+      chunkFileNames: '[name]-[hash].js',
+      entryFileNames: '[name].js',
+      manualChunks(id) {
+        // Split out `three.js` and other external dependencies into separate chunks
+        if (id.includes('node_modules/three')) {
+          return 'three';
+        }
+        // Further chunking logic can be added for other large modules
+      },
+      chunkSizeWarningLimit: 800, // This increases the size limit for the warning to 600kB
     },
-  },
-  plugins: [
-    dynamicImportVars(), // Enables dynamic import vars for chunking optimization
-  ],
-  watch: {
-    include: 'src/**', // Include your source files for watching changes
-  },
-  external: ['three', 'three/examples/jsm/controls/OrbitControls.js', 'three/addons/loaders/GLTFLoader.js'], // Mark these dependencies as external
-};
+    plugins: [dynamicImportVars()],
+  };
+  

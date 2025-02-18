@@ -12,7 +12,7 @@ export default {
         }
         // Further chunking logic can be added for other large modules
       },
-      chunkSizeWarningLimit: 1000, // This increases the size limit for the warning to 600kB
+      chunkSizeWarningLimit: 2000, // This increases the size limit for the warning to 600kB
     },
     plugins: [dynamicImportVars()],
   };

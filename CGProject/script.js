@@ -13,15 +13,14 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const textureLoader = new THREE.TextureLoader();
-const planeTexture = textureLoader.load('/public/textures/gravelly_sand_diff_4k.jpg');
-const roadTexture = textureLoader.load('/public/textures/gravel_road_diff_4k.jpg');
-const capsuleAmbientTexture = textureLoader.load('/public/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_ambientOcclusion.png');
-const capsuleBaseTexture = textureLoader.load('/public/texturesSci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_basecolor.png');
-const capsuleHeightTexture = textureLoader.load('/public/texturesSci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_height.png');
-const capsuleMetallicTexture = textureLoader.load('/public/texturesSci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_metallic.png');
-const capsuleNormalTexture = textureLoader.load('/public/texturesSci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_normal.png');
-const capsuleRoughnessTexture = textureLoader.load('/public/texturesSci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_roughness.png');
-
+const planeTexture = textureLoader.load('/textures/gravelly_sand_diff_4k.jpg');
+const roadTexture = textureLoader.load('/textures/gravel_road_diff_4k.jpg');
+const capsuleAmbientTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_ambientOcclusion.png');
+const capsuleBaseTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_basecolor.png');
+const capsuleHeightTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_height.png');
+const capsuleMetallicTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_metallic.png');
+const capsuleNormalTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_normal.png');
+const capsuleRoughnessTexture = textureLoader.load('/textures/Sci-fi_Metal_Mesh_002_SD/Sci-fi_Metal_Mesh_002_roughness.png');
 //lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambientLight);
@@ -119,8 +118,8 @@ road.position.z = 2.2;
 scene.add(road);
 
 //barriers
-const barrierLoader = new GLTFLoader().setPath('/public/barrier/');
-barrierLoader.load('/public/scene.gltf', (gltf) => {
+const barrierLoader = new GLTFLoader().setPath('/barrier/');
+barrierLoader.load('scene.gltf', (gltf) => {
     const barrierMesh = gltf.scene;
     barrierMesh.position.set(0, -0.1, 1);
     barrierMesh.scale.set(0.2,0.2,0.2);
@@ -135,8 +134,8 @@ barrierLoader.load('/public/scene.gltf', (gltf) => {
     scene.add(barrierMesh);
 });
 
-const barrierLoader2 = new GLTFLoader().setPath('/public/barrier/');
-barrierLoader2.load('/public/scene.gltf', (gltf) => {
+const barrierLoader2 = new GLTFLoader().setPath('/barrier/');
+barrierLoader2.load('scene.gltf', (gltf) => {
     const barrierMesh2 = gltf.scene;
     barrierMesh2.position.set(1.5, -0.1, 1.3);
     barrierMesh2.scale.set(0.2,0.2,0.2);
@@ -151,8 +150,8 @@ barrierLoader2.load('/public/scene.gltf', (gltf) => {
     scene.add(barrierMesh2);
 });
 
-const barrierLoader3 = new GLTFLoader().setPath('/public/barrier/');
-barrierLoader3.load('/public/scene.gltf', (gltf) => {
+const barrierLoader3 = new GLTFLoader().setPath('/barrier/');
+barrierLoader3.load('scene.gltf', (gltf) => {
     const barrierMesh3 = gltf.scene;
     barrierMesh3.position.set(-1.8, -0.1, 1.4);
     barrierMesh3.scale.set(0.2,0.2,0.2);
@@ -167,8 +166,8 @@ barrierLoader3.load('/public/scene.gltf', (gltf) => {
     scene.add(barrierMesh3);
 });
 
-const barrierLoader4 = new GLTFLoader().setPath('/public/barrier/');
-barrierLoader4.load('/public/scene.gltf', (gltf) => {
+const barrierLoader4 = new GLTFLoader().setPath('/barrier/');
+barrierLoader4.load('scene.gltf', (gltf) => {
     const barrierMesh4 = gltf.scene;
     barrierMesh4.position.set(3.3, -0.1, 1.1);
     barrierMesh4.scale.set(0.2,0.2,0.2);
@@ -201,7 +200,7 @@ const clock = new THREE.Clock();
 
 //let part;
 const loader = new GLTFLoader().setPath('public/');
-loader.load('/public/scene.gltf', (gltf) => {
+loader.load('scene.gltf', (gltf) => {
     const mesh = gltf.scene;
     mesh.position.set(0, 0.8, -1);
     mesh.scale.set(0.01,0.01,0.01);
@@ -235,7 +234,7 @@ loader.load('/public/scene.gltf', (gltf) => {
 });
 
 const loader2 = new GLTFLoader().setPath('public/');
-loader2.load('/public/scene.gltf', (gltf) => {
+loader2.load('scene.gltf', (gltf) => {
     const mesh2 = gltf.scene;
     mesh2.position.set(3, 0.3, -3);
     mesh2.scale.set(0.01,0.01,0.01);
@@ -268,7 +267,7 @@ loader2.load('/public/scene.gltf', (gltf) => {
 });
 
 const loader3 = new GLTFLoader().setPath('public/');
-loader3.load('/public/scene.gltf', (gltf) => {
+loader3.load('scene.gltf', (gltf) => {
     const mesh3 = gltf.scene;
     mesh3.position.set(-3, 0.5, -2.2);
     mesh3.scale.set(0.01,0.01,0.01);

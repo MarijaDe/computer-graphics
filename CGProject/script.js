@@ -118,7 +118,7 @@ road.position.z = 2.2;
 scene.add(road);
 
 //barriers
-const barrierLoader = new GLTFLoader().setPath('/barrier/');
+const barrierLoader = new GLTFLoader().setPath('barrier/');
 barrierLoader.load('scene.gltf', (gltf) => {
     const barrierMesh = gltf.scene;
     barrierMesh.position.set(0, -0.1, 1);
@@ -134,7 +134,7 @@ barrierLoader.load('scene.gltf', (gltf) => {
     scene.add(barrierMesh);
 });
 
-const barrierLoader2 = new GLTFLoader().setPath('/barrier/');
+const barrierLoader2 = new GLTFLoader().setPath('barrier/');
 barrierLoader2.load('scene.gltf', (gltf) => {
     const barrierMesh2 = gltf.scene;
     barrierMesh2.position.set(1.5, -0.1, 1.3);
@@ -150,7 +150,7 @@ barrierLoader2.load('scene.gltf', (gltf) => {
     scene.add(barrierMesh2);
 });
 
-const barrierLoader3 = new GLTFLoader().setPath('/barrier/');
+const barrierLoader3 = new GLTFLoader().setPath('barrier/');
 barrierLoader3.load('scene.gltf', (gltf) => {
     const barrierMesh3 = gltf.scene;
     barrierMesh3.position.set(-1.8, -0.1, 1.4);
@@ -166,7 +166,7 @@ barrierLoader3.load('scene.gltf', (gltf) => {
     scene.add(barrierMesh3);
 });
 
-const barrierLoader4 = new GLTFLoader().setPath('/barrier/');
+const barrierLoader4 = new GLTFLoader().setPath('barrier/');
 barrierLoader4.load('scene.gltf', (gltf) => {
     const barrierMesh4 = gltf.scene;
     barrierMesh4.position.set(3.3, -0.1, 1.1);

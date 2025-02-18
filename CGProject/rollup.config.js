@@ -9,12 +9,10 @@ export default {
     chunkFileNames: '[name]-[hash].js',
     entryFileNames: '[name].js',
     manualChunks(id) {
-      // Separate vendor dependencies into a 'vendor' chunk
       if (id.includes('node_modules')) {
         return 'vendor';
       }
     },
-    chunkSizeWarningLimit: 600, // Adjust this limit as needed
   },
   plugins: [
     dynamicImportVars(), // Enables dynamic import vars for chunking optimization
@@ -22,4 +20,5 @@ export default {
   watch: {
     include: 'src/**', // Include your source files for watching changes
   },
+  external: ['three', 'three/examples/jsm/controls/OrbitControls.js', 'three/addons/loaders/GLTFLoader.js'], // Mark these dependencies as external
 };
